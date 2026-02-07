@@ -1,0 +1,72 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.backends._legacy:_Backend"
+
+[project]
+name = "astra-assistant"
+dynamic = ["version"]
+description = "Local AI assistant with memory, sentiment analysis, and voice support"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.10"
+authors = [
+    {name = "Koushik Swarna"},
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+dependencies = [
+    "torch>=2.0",
+    "transformers>=4.40",
+    "chromadb>=1.0",
+    "sentence-transformers>=5.0",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+voice = ["pyttsx3>=2.90", "SpeechRecognition>=3.10"]
+web = ["streamlit>=1.30"]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "pytest-mock>=3.10",
+    "mypy>=1.5",
+    "ruff>=0.1.0",
+]
+all = ["astra-assistant[voice,web,dev]"]
+
+[project.scripts]
+astra = "astra.__main__:main"
+
+[tool.setuptools.dynamic]
+version = {attr = "astra.version.__version__"}
+
+[tool.setuptools.packages.find]
+include = ["astra*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP"]
+ignore = ["E501"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-v --tb=short"
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
