@@ -5,7 +5,11 @@ Run this once after install:
     python scripts/download_models.py
 """
 
+import os
 import sys
+
+os.environ["USE_TF"] = "0"
+os.environ["USE_TORCH"] = "1"
 
 
 def main():
