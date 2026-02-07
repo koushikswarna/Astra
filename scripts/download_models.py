@@ -17,10 +17,10 @@ def main():
     print("This might take a while on the first run.\n")
 
     # chat model
-    print("[1/3] Chat model (distilgpt2)...")
+    print("[1/3] Chat model (DialoGPT-medium)...")
     from transformers import AutoTokenizer, AutoModelForCausalLM
-    AutoTokenizer.from_pretrained("distilgpt2")
-    AutoModelForCausalLM.from_pretrained("distilgpt2")
+    AutoTokenizer.from_pretrained("microsoft/DialoGPT-medium")
+    AutoModelForCausalLM.from_pretrained("microsoft/DialoGPT-medium")
     print("      Done.\n")
 
     # embedding model

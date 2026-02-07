@@ -3,6 +3,9 @@
 This is where the actual inference happens. The generator
 owns the model, tokenizer, and cache, and exposes a clean
 generate() method that the rest of the app calls.
+
+Supports both DialoGPT-style (EOS-separated turns) and generic
+causal LM generation.
 """
 
 from __future__ import annotations
@@ -22,6 +25,11 @@ from astra.utils.timing import timed
 _log = get_logger(__name__)
 
 
+def _is_dialogpt(model_name: str) -> bool:
+    """Check if this is a DialoGPT model based on the name."""
+    return "dialogpt" in model_name.lower()
+
+
 class TextGenerator(BaseModel):
     """Local text generation using HuggingFace transformers."""
 
@@ -31,12 +39,20 @@ class TextGenerator(BaseModel):
         self._loader = ModelLoader(self._config.chat_model)
         self._model = self._loader.load()
         self._cache = CacheManager()
+        self._is_dialogpt = _is_dialogpt(self._config.chat_model)
+
+        if self._is_dialogpt:
+            _log.info("DialoGPT model detected, using conversation-style generation")
+
+    @property
+    def eos_token(self) -> str:
+        """The EOS token string, needed for DialoGPT prompt formatting."""
+        return self._tokenizer.eos_token
 
     @timed(label="generation")
     def generate(self, prompt: str, **kwargs) -> GenerationResult:
         gen_cfg = self._config.generation
 
-        # merge any per-call overrides with the config defaults
         max_new_tokens = kwargs.get("max_new_tokens", gen_cfg.max_new_tokens)
         temperature = kwargs.get("temperature", gen_cfg.temperature)
         top_p = kwargs.get("top_p", gen_cfg.top_p)
@@ -61,28 +77,23 @@ class TextGenerator(BaseModel):
         except Exception as exc:
             raise GenerationError(f"Generation failed: {exc}") from exc
 
-        full_text = self._tokenizer.decode(output_ids[0])
-        completion_len = output_ids.shape[1] - prompt_len
-
-        # strip the prompt from the output to get just the continuation
-        if full_text.startswith(prompt):
-            generated = full_text[len(prompt):].strip()
-        else:
-            generated = full_text.strip()
+        # decode only the new tokens (not the prompt)
+        new_token_ids = output_ids[0][prompt_len:]
+        generated = self._tokenizer.decode(new_token_ids)
+        completion_len = len(new_token_ids)
 
         # clear cache if memory pressure is building
         if self._cache.should_clear():
             self._cache.clear()
 
         return GenerationResult(
-            text=generated,
+            text=generated.strip(),
             prompt_tokens=prompt_len,
             completion_tokens=completion_len,
-            raw_output=full_text,
+            raw_output=self._tokenizer.decode(output_ids[0]),
         )
 
     def warmup(self) -> None:
-        """Run a short generation to warm up the model."""
         _log.debug("Warming up model...")
         self.generate("Hello", max_new_tokens=5)
         _log.debug("Warmup complete")
@@ -96,5 +107,4 @@ class TextGenerator(BaseModel):
         return self._loader.device_name
 
     def token_count(self, text: str) -> int:
-        """How many tokens a text would consume."""
         return self._tokenizer.count_tokens(text)

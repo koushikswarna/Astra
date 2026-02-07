@@ -77,7 +77,10 @@ class ChatPipeline:
 
         # step 4: add user turn to history and build prompt
         self.memory.add_turn("User", cleaned)
-        prompt = self.memory.build_prompt(self.personality, extra_context=extra_context)
+        eos = self.generator.eos_token if hasattr(self.generator, 'eos_token') else ""
+        prompt = self.memory.build_prompt(
+            self.personality, extra_context=extra_context, eos_token=eos
+        )
 
         # step 5: generate via middleware chain
         def core_generate(ctx: dict[str, Any]) -> dict[str, Any]:

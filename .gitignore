@@ -38,3 +38,4 @@ htmlcov/
 
 # model weights cached locally
 model_cache/
+.claude/

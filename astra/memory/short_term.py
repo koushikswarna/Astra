@@ -46,25 +46,33 @@ class ShortTermMemory(BaseMemory):
         self,
         personality: Personality,
         extra_context: str = "",
+        eos_token: str = "",
     ) -> str:
-        """Build a full prompt string from conversation history.
+        """Build a prompt string from conversation history.
 
-        The last entry in self.history should be the user's latest message.
-        This method renders everything and appends "Astra:" so the model
-        knows whose turn it is to speak.
+        For DialoGPT-style models, turns are separated by the EOS token
+        rather than role labels. The model learns to generate a response
+        after seeing the conversation flow.
+
+        For generic causal LMs, we fall back to a labeled format.
         """
-        parts = [
-            f"Astra is a {personality.describe()} assistant. Keep replies helpful and concise.\n",
-        ]
-
-        if extra_context:
-            parts.append(extra_context)
-
-        for role, text in self.history:
-            parts.append(f"{role}: {text}")
-
-        parts.append("Astra:")
-        return "\n".join(parts)
+        if eos_token:
+            # DialoGPT format: turn1 <eos> turn2 <eos> turn3 <eos>
+            # only include the text, no role labels -- DialoGPT was trained
+            # on raw conversation without speaker tags
+            turns = [text for _, text in self.history]
+            return eos_token.join(turns) + eos_token
+        else:
+            # generic causal LM fallback with role labels
+            parts = [
+                f"Astra is a {personality.describe()} assistant. Keep replies helpful and concise.\n",
+            ]
+            if extra_context:
+                parts.append(extra_context)
+            for role, text in self.history:
+                parts.append(f"{role}: {text}")
+            parts.append("Astra:")
+            return "\n".join(parts)
 
     def save(self) -> None:
         if self._store is None:

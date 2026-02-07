@@ -9,6 +9,13 @@ only loads once, not on every Streamlit rerun.
 
 from __future__ import annotations
 
+import os
+
+# streamlit's file watcher crashes when it tries to inspect torch._classes
+# (it thinks __path__._path is a real class). disabling the watcher
+# avoids the RuntimeError entirely.
+os.environ.setdefault("STREAMLIT_SERVER_FILE_WATCHER_TYPE", "none")
+
 import streamlit as st
 
 st.set_page_config(page_title="Astra", layout="wide", page_icon="*")

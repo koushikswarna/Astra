@@ -46,6 +46,10 @@ class TokenizerWrapper:
         return self._tokenizer.eos_token_id
 
     @property
+    def eos_token(self) -> str:
+        return self._tokenizer.eos_token or ""
+
+    @property
     def vocab_size(self) -> int:
         return self._tokenizer.vocab_size
 

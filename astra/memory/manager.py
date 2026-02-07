@@ -59,8 +59,9 @@ class MemoryManager:
         """Add a conversation turn to short-term memory."""
         self.short_term.add(role, text)
 
-    def build_prompt(self, personality: Personality, extra_context: str = "") -> str:
-        return self.short_term.format_prompt(personality, extra_context)
+    def build_prompt(self, personality: Personality, extra_context: str = "",
+                     eos_token: str = "") -> str:
+        return self.short_term.format_prompt(personality, extra_context, eos_token=eos_token)
 
     def recall(self, query: str, n: int = 3) -> list[str]:
         """Semantic recall from long-term memory."""
